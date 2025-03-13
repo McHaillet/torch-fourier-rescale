@@ -46,25 +46,25 @@ def fourier_rescale_3d(
     dft = torch.fft.rfftn(image, dim=(-3, -2, -1))
     dft = torch.fft.fftshift(dft, dim=(-3, -2))
 
-    # Fourier pad/crop
-    dft, new_nyquist, new_shape = fourier_rescale_rfft_3d(
-        dft=dft,
-        image_shape=image.shape[-3:],
-        source_spacing=source_spacing,
-        target_spacing=target_spacing,
-    )
-
     cut_off = (
         0.5 * (source_spacing[0] / target_spacing[0])
         if (target_spacing > source_spacing)
         else 0.5
     )
     dft *= low_pass_filter(
-        cutoff=0.95 * cut_off,
-        falloff=0.05 * cut_off,
-        image_shape=new_shape,
+        cutoff=0.75 * cut_off,
+        falloff=0.25 * cut_off,
+        image_shape=image.shape[-3:],
         rfft=True,
         fftshift=True,
+    )
+
+    # Fourier pad/crop
+    dft, new_nyquist, new_shape = fourier_rescale_rfft_3d(
+        dft=dft,
+        image_shape=image.shape[-3:],
+        source_spacing=source_spacing,
+        target_spacing=target_spacing,
     )
 
     # transform back to real space and recenter
