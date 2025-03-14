@@ -3,7 +3,7 @@ from math import ceil, floor
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch_fourier_filter.bandpass import low_pass_filter
+from torch_grid_utils import fftfreq_grid
 
 from .utils import get_target_fftfreq
 
@@ -46,19 +46,6 @@ def fourier_rescale_3d(
     dft = torch.fft.rfftn(image, dim=(-3, -2, -1))
     dft = torch.fft.fftshift(dft, dim=(-3, -2))
 
-    cut_off = (
-        0.5 * (source_spacing[0] / target_spacing[0])
-        if (target_spacing > source_spacing)
-        else 0.5
-    )
-    dft *= low_pass_filter(
-        cutoff=0.75 * cut_off,
-        falloff=0.25 * cut_off,
-        image_shape=image.shape[-3:],
-        rfft=True,
-        fftshift=True,
-    )
-
     # Fourier pad/crop
     dft, new_nyquist, new_shape = fourier_rescale_rfft_3d(
         dft=dft,
@@ -66,6 +53,10 @@ def fourier_rescale_3d(
         source_spacing=source_spacing,
         target_spacing=target_spacing,
     )
+
+    q = fftfreq_grid(image_shape=new_shape, rfft=True, fftshift=True, norm=True)
+    cut_off = 0.5 / (np.sqrt(2 * np.log(2)))  # hwhm -> sigma
+    dft *= np.exp(-(q**2) / (2 * cut_off**2))
 
     # transform back to real space and recenter
     dft = torch.fft.ifftshift(dft, dim=(-3, -2))

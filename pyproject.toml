@@ -37,7 +37,7 @@ dependencies = [
     "torch",
     "numpy",
     "einops",
-    "torch-fourier-filter>=0.2",
+    "torch-grid-utils",
 ]
 
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
